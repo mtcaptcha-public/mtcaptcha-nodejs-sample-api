@@ -1,0 +1,19 @@
+{
+  "name": "mt-node-backend",
+  "version": "1.0.0",
+  "description": "sample mtcaptcha node backend implementation ",
+  "main": "index.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mtcaptcha": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "dev": "node index.js",
+    "start" : "forever start --uid 'node-backend' -a index.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
