@@ -1,13 +1,20 @@
 // routes/router.js
 const express = require('express');
 const router = express.Router();
-const MTCaptchaLib = require('mtcaptcha').MTCaptcha;
+const MTCaptcha = require('mtcaptcha');
 const jwt = require('jsonwebtoken');
 const userMiddleware = require('../middleware/user.js');
-const MTCaptchaConfig = require('../config/config.json');
 
+const captcha = new MTCaptcha({
+  privateKey: process.env.MTCAPTCHA_PRIVATE_KEY
+});
 
-router.post('/login', (req, res, next) => {
+router.post('/login', async (req, res, next) => {
+  if (!process.env.MTCAPTCHA_PRIVATE_KEY) {
+    return res.status(500).send({
+      msg: 'MTCAPTCHA_PRIVATE_KEY is not configured.'
+    });
+  }
 
   if(req.body.password != "test" || req.body.username != "test"){
     return res.status(401).send({
@@ -19,10 +26,10 @@ router.post('/login', (req, res, next) => {
       msg: 'Captcha is required!'
     });
   }
-  // Add your site private key here, you can get it from the sites page of MTCaptcha admin site.
-  const mtcapInstance = new MTCaptchaLib(MTCaptchaConfig['MTCAPTCHA_PRIVATE_KEY'],req.body['verifiedtoken']);
-  mtcapInstance.verify(function (tokenValidationResponse) {
-    if(tokenValidationResponse.success){
+
+  const tokenValidationResponse = await captcha.verify(req.body.verifiedtoken);
+
+  if(tokenValidationResponse.success){
       const token = jwt.sign({
           username: "MTCaptcha",
           userId: 1
@@ -36,11 +43,13 @@ router.post('/login', (req, res, next) => {
         token,
         user: {username:"MTCaptcha"}
       });
-    }else{
-      return res.status(401).send({msg: Object.values(tokenValidationResponse.fail_codes[0]).toString()});
-    }
-  });
+  }
 
+  return res.status(401).send({
+    msg: tokenValidationResponse.fail_codes?.length
+      ? Object.values(tokenValidationResponse.fail_codes[0]).toString()
+      : 'Captcha verification failed.'
+  });
 
 });
 
